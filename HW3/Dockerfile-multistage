@@ -1,0 +1,15 @@
+# Используем образ Python для установки зависимостей
+FROM python:3.13-slim AS build
+COPY ./brick_language.py /build_app/brick_language.py
+RUN apt-get update \
+    && apt-get install -y build-essential patchelf scons\
+    && pip install staticx pyinstaller \
+    && pyinstaller --onefile /build_app/brick_language.py --distpath /build_app/build_result \
+    && mkdir /binary_app \
+    && staticx /build_app/build_result/brick_language /binary_app/brick_language \
+    && mkdir -p /binary_app/tmp
+
+FROM scratch
+COPY --from=build /binary_app/brick_language /brick_language
+COPY --from=build /binary_app/tmp /tmp
+ENTRYPOINT [ "/brick_language" ]
